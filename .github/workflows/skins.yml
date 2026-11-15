@@ -1,0 +1,46 @@
+# Redraws the profile skins every day and publishes them to the "skins" branch.
+# Your own branch never gets bot commits: the images live only on "skins", replaced on every run.
+name: Draw profile skins
+
+on:
+  schedule:
+    - cron: "59 20 * * *"       # every day at 20:59 UTC, which is 11:59 PM in Riyadh
+  workflow_dispatch:             # "Run workflow" button in the Actions tab
+  push:
+    branches: [main, master]
+    paths: ["scripts/**", ".github/workflows/skins.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: skins
+  cancel-in-progress: true
+
+jobs:
+  draw:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install fonttools
+        run: pip install fonttools
+
+      - name: Draw the skins
+        env:
+          GITHUB_TOKEN: ${{ secrets.SKINS_TOKEN }}   # your token, saved as a repository secret
+        run: python scripts/build_skins.py
+
+      - name: Publish to the skins branch
+        run: |
+          cd skins
+          git init -q -b skins
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add space.svg frost.svg frost-night.svg
+          git commit -q -m "Redraw skins"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" skins:skins
