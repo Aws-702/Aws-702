@@ -21,7 +21,10 @@ Usage
   python3 scripts/build_skins.py --demo 0          demo with N repos, to preview how the sun and tree grow
   python3 scripts/build_skins.py --refresh-colors  update the Linguist color list first
 
-Optional: set GITHUB_TOKEN to raise the API rate limit. Needs: pip install fonttools
+Optional: set GITHUB_TOKEN. It raises the API rate limit, and the activity graph is then read through the API
+signed in as you, so it keeps working with a private profile (daily counts only, never repo names).
+Repos are still read from the public list, so a token never makes a private repo appear.
+Needs: pip install fonttools
 """
 import argparse
 import base64
@@ -264,7 +267,37 @@ def fetch_repos():
             for r in keep[:MAX_REPOS_FOR_LANGS]]
 
 
+LEVELS = {"NONE": 0, "FIRST_QUARTILE": 1, "SECOND_QUARTILE": 2, "THIRD_QUARTILE": 3, "FOURTH_QUARTILE": 4}
+
+
+def fetch_calendar_api():
+    """Your contribution calendar through the GraphQL API, signed in as you with GITHUB_TOKEN.
+    It still works when your profile is private, and only daily counts come back, never repo names."""
+    query = ("query($login:String!){user(login:$login){contributionsCollection{contributionCalendar{"
+             "weeks{contributionDays{date contributionCount contributionLevel}}}}}}")
+    req = urllib.request.Request(
+        "https://api.github.com/graphql",
+        data=json.dumps({"query": query, "variables": {"login": USER}}).encode(),
+        headers={"Authorization": f"Bearer {os.environ['GITHUB_TOKEN']}", "User-Agent": "profile-skins",
+                 "Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        data = json.load(r)
+    if data.get("errors"):
+        raise ValueError(data["errors"][0].get("message", "GraphQL error"))
+    weeks = data["data"]["user"]["contributionsCollection"]["contributionCalendar"]["weeks"]
+    days = [(date.fromisoformat(d["date"]), d["contributionCount"], LEVELS.get(d["contributionLevel"], 0))
+            for w in weeks for d in w["contributionDays"]]
+    if not days:
+        raise ValueError("empty calendar")
+    return sorted(days)
+
+
 def fetch_calendar():
+    if os.environ.get("GITHUB_TOKEN"):
+        try:
+            return fetch_calendar_api()
+        except Exception as e:
+            print(f"warning: the API calendar failed ({e}); trying your public calendar page", file=sys.stderr)
     html = http(f"https://github.com/users/{USER}/contributions")
     cells = {}
     for m in re.finditer(r"<td\b[^>]*>", html):

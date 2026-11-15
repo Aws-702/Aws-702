@@ -5,8 +5,8 @@ Redraw after your public repos change: python3 scripts/build_skins.py
 -->
 <!-- skin:start -->
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./skins/frost-night.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="./skins/space.svg">
   <source media="(prefers-color-scheme: light)" srcset="./skins/frost.svg">
-  <img src="./skins/frost-night.svg" width="100%" alt="Aws on GitHub: public repositories, contribution activity and languages.">
+  <img src="./skins/space.svg" width="100%" alt="Aws on GitHub: public repositories, contribution activity and languages.">
 </picture>
 <!-- skin:end -->
