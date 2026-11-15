@@ -1,16 +1,12 @@
-## Hi there 👋
-
 <!--
-**Aws-702/Aws-702** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
-
-Here are some ideas to get you started:
-
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
+Which skin shows is set below. Switch from the terminal:
+python3 scripts/use_skin.py space | frost | frost-day | frost-night | auto | swap
+Redraw after your public repos change: python3 scripts/build_skins.py
 -->
+<!-- skin:start -->
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./skins/frost-night.svg">
+  <source media="(prefers-color-scheme: light)" srcset="./skins/frost.svg">
+  <img src="./skins/frost-night.svg" width="100%" alt="Aws on GitHub: public repositories, contribution activity and languages.">
+</picture>
+<!-- skin:end -->
