@@ -19,14 +19,26 @@ README = Path(__file__).resolve().parent.parent / "README.md"
 START, END = "<!-- skin:start -->", "<!-- skin:end -->"
 ALT = "Aws on GitHub: public repositories, contribution activity and languages."
 
+# The daily workflow (.github/workflows/skins.yml) draws the skins and force-pushes
+# them to the "skins" branch, not to main. The profile is served from main, so the
+# images must be referenced by absolute URL on the skins branch -- a relative
+# ./skins/ path would resolve to main's stale copy and the profile would never
+# auto-update. Keep this in sync with README.md.
+SKINS_BRANCH = "skins"
+RAW = f"https://raw.githubusercontent.com/Aws-702/Aws-702/{SKINS_BRANCH}"
+
+def src(name):
+    return f"{RAW}/{name}.svg"
+
+
 def img(name):
-    return f'<img src="./skins/{name}.svg" width="100%" alt="{ALT}">'
+    return f'<img src="{src(name)}" width="100%" alt="{ALT}">'
 
 
 def picture(dark, light, fallback):
     return ('<picture>\n'
-            f'  <source media="(prefers-color-scheme: dark)" srcset="./skins/{dark}.svg">\n'
-            f'  <source media="(prefers-color-scheme: light)" srcset="./skins/{light}.svg">\n'
+            f'  <source media="(prefers-color-scheme: dark)" srcset="{src(dark)}">\n'
+            f'  <source media="(prefers-color-scheme: light)" srcset="{src(light)}">\n'
             f'  {img(fallback)}\n'
             '</picture>')
 
@@ -64,12 +76,13 @@ def current(text):
     if not span:
         return None
     block = text[span[0]:span[1]]
-    dark = re.search(r'prefers-color-scheme: dark\)" srcset="\./skins/([\w-]+)\.svg', block)
-    light = re.search(r'prefers-color-scheme: light\)" srcset="\./skins/([\w-]+)\.svg', block)
+    name = r'/([\w-]+)\.svg"'  # anchor on the trailing slash so the filename is captured
+    dark = re.search(r'prefers-color-scheme: dark\)"\s+srcset="[^"]*' + name, block)
+    light = re.search(r'prefers-color-scheme: light\)"\s+srcset="[^"]*' + name, block)
     if dark and light:
         pair = (dark.group(1), light.group(1))
     else:
-        one = re.search(r'skins/([\w-]+)\.svg', block)
+        one = re.search(r'(?:srcset|src)="[^"]*' + name, block)
         pair = (one.group(1), one.group(1)) if one else None
     for mode, skins in MODES.items():
         if skins == pair:
